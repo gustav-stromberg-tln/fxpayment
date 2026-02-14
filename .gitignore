@@ -31,3 +31,4 @@ replay_pid*
 
 # Environment
 .env
+/backend/target/

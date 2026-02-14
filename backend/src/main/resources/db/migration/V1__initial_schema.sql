@@ -9,7 +9,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE currencies (
     code            VARCHAR(3)      PRIMARY KEY,
     name            VARCHAR(255)    NOT NULL,
-    fee_percentage  NUMERIC(7,4)    NOT NULL,
+    fee_percentage  NUMERIC(10,6)    NOT NULL,
     minimum_fee     NUMERIC(19,4)   NOT NULL,
     decimals        SMALLINT        NOT NULL DEFAULT 2
         CONSTRAINT check_decimals CHECK (decimals BETWEEN 0 AND 18),
