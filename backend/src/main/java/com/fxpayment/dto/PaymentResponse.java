@@ -1,6 +1,7 @@
 package com.fxpayment.dto;
 
 import com.fxpayment.model.Payment;
+import com.fxpayment.util.MoneyUtil;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,20 +12,16 @@ public record PaymentResponse(
         BigDecimal amount,
         String currency,
         String recipient,
-        String recipientAccount,
         BigDecimal processingFee,
-        String status,
         Instant createdAt
 ) {
-    public static PaymentResponse from(Payment payment) {
+    public static PaymentResponse from(Payment payment, int currencyDecimals) {
         return new PaymentResponse(
                 payment.getId(),
-                payment.getAmount(),
+                MoneyUtil.roundToScale(payment.getAmount(), currencyDecimals),
                 payment.getCurrency(),
                 payment.getRecipient(),
-                payment.getRecipientAccount(),
-                payment.getProcessingFee(),
-                payment.getStatus().name(),
+                MoneyUtil.roundToScale(payment.getProcessingFee(), currencyDecimals),
                 payment.getCreatedAt()
         );
     }

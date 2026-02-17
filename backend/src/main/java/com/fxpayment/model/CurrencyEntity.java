@@ -1,5 +1,6 @@
 package com.fxpayment.model;
 
+import com.fxpayment.util.PaymentConstants;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -19,24 +20,23 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-// Named Curr to avoid clash with java.util.Currency
-public class Curr {
+public class CurrencyEntity {
 
     @Id
-    @Column(length = 3)
+    @Column(length = PaymentConstants.CURRENCY_CODE_LENGTH)
     private String code;
 
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "fee_percentage", nullable = false, precision = 9, scale = 6)
-    private BigDecimal feePercentage;
+    @Column(name = "fee_rate", nullable = false, precision = PaymentConstants.FEE_RATE_PRECISION, scale = PaymentConstants.FEE_RATE_SCALE)
+    private BigDecimal feeRate;
 
-    @Column(name = "minimum_fee", nullable = false, precision = 19, scale = 4)
+    @Column(name = "minimum_fee", nullable = false, precision = PaymentConstants.MONEY_PRECISION, scale = PaymentConstants.INTERNAL_SCALE)
     private BigDecimal minimumFee;
 
     @Min(0)
-    @Max(18)
+    @Max(PaymentConstants.MAX_CURRENCY_DECIMALS)
     @Column(nullable = false)
     private short decimals;
 }

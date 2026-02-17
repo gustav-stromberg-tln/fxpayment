@@ -1,9 +1,13 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password:
     driver-class-name: org.h2.Driver
+
+  threads:
+    virtual:
+      enabled: true
 
   jpa:
     hibernate:
@@ -13,8 +17,28 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 
+  cache:
+    type: none
+
   flyway:
     enabled: false
 
 server:
   port: 0
+
+cache:
+  currency:
+    ttl: 24h
+    max-size: 500
+  idempotency:
+    ttl: 24h
+    max-size: 10000
+
+app:
+  cache:
+    enabled: false
+
+cors:
+  allowed-origins: "*"
+  allowed-methods: GET,POST
+  allowed-headers: Content-Type,Idempotency-Key,X-Request-Id

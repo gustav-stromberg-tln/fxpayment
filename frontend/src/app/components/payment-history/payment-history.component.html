@@ -1,0 +1,87 @@
+<div class="card">
+    <div class="card-body">
+        <h2 class="card-title h5 mb-3">Payment History</h2>
+        @if (loadError()) {
+            <div class="alert alert-danger">
+                Failed to load payments. Please try again later.
+            </div>
+        } @else if (loading() && payments().length === 0) {
+            <div class="text-center py-4">
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                Loading payments...
+            </div>
+        } @else if (payments().length === 0) {
+            <div class="text-center text-muted py-4">
+                No payments yet.
+            </div>
+        }
+
+        @if (payments().length > 0) {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Recipient</th>
+                        <th>Amount</th>
+                        <th>Currency</th>
+                        <th>Applied Fee</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        @for (payment of payments(); track payment.id) {
+                            <tr>
+                                <td>{{ payment.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                                <td>{{ payment.recipient }}</td>
+                                <td>{{ payment.amount | currencyAmount:payment.currency }}</td>
+                                <td><span class="badge text-bg-secondary">{{ payment.currency }}</span></td>
+                                <td>{{ payment.processingFee | currencyAmount:payment.currency }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="text-muted">
+                    Showing {{ showingFrom() }}&ndash;{{ showingTo() }}
+                    of {{ totalElements() }} payments
+                </small>
+                <nav aria-label="Payment history pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" [class.disabled]="isFirstPage()">
+                            <button type="button" class="page-link" (click)="goToPage(0)" aria-label="First"
+                                    [disabled]="isFirstPage()">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </button>
+                        </li>
+                        <li class="page-item" [class.disabled]="isFirstPage()">
+                            <button type="button" class="page-link" (click)="previousPage()" aria-label="Previous"
+                                    [disabled]="isFirstPage()">
+                                <span aria-hidden="true">&laquo;</span>
+                            </button>
+                        </li>
+                        @for (page of visiblePages(); track page) {
+                            <li class="page-item" [class.active]="page === currentPage()">
+                                <button type="button" class="page-link" (click)="goToPage(page)">{{ page + 1 }}</button>
+                            </li>
+                        }
+                        <li class="page-item" [class.disabled]="isLastPage()">
+                            <button type="button" class="page-link" (click)="nextPage()" aria-label="Next"
+                                    [disabled]="isLastPage()">
+                                <span aria-hidden="true">&raquo;</span>
+                            </button>
+                        </li>
+                        <li class="page-item" [class.disabled]="isLastPage()">
+                            <button type="button" class="page-link" (click)="goToPage(totalPages() - 1)"
+                                    aria-label="Last"
+                                    [disabled]="isLastPage()">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

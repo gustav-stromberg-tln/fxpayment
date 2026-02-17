@@ -1,22 +1,16 @@
 package com.fxpayment.dto;
 
-import com.fxpayment.model.Curr;
-
-import java.math.BigDecimal;
+import com.fxpayment.model.CurrencyEntity;
 
 public record CurrencyResponse(
         String code,
         String name,
-        BigDecimal feePercentage,
-        BigDecimal minimumFee,
         short decimals
 ) {
-    public static CurrencyResponse from(Curr currency) {
+    public static CurrencyResponse from(CurrencyEntity currency) {
         return new CurrencyResponse(
                 currency.getCode(),
                 currency.getName(),
-                currency.getFeePercentage(),
-                currency.getMinimumFee(),
                 currency.getDecimals()
         );
     }

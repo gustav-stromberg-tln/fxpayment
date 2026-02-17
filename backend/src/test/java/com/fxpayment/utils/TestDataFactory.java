@@ -1,100 +1,88 @@
 package com.fxpayment.utils;
 
-import com.fxpayment.dto.PaymentRequest;
-import com.fxpayment.model.Curr;
-import com.fxpayment.model.Payment;
-import com.fxpayment.model.PaymentStatus;
+import com.fxpayment.model.CurrencyEntity;
 import com.fxpayment.repository.CurrencyRepository;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 public final class TestDataFactory {
 
     public static final String ESTONIAN_IBAN = "EE382200221020145685";
+    public static final String SWEDISH_IBAN = "SE4550000000058398257466";
     public static final String FINNISH_IBAN = "FI2112345600000785";
+    public static final String GERMAN_IBAN = "DE89370400440532013000";
 
-    private TestDataFactory() {}
+    public static final String UNSUPPORTED_CURRENCY = "ZZZ";
+    public static final String RECIPIENT_WITH_DIACRITICS = "Müller Ödegård";
+
+    public static final String PAYMENT_UUID_1 = "00000000-0000-0000-0000-000000000001";
+    public static final String PAYMENT_UUID_2 = "00000000-0000-0000-0000-000000000002";
+    public static final String PAYMENTS_API_PATH = "/api/v1/payments";
+    public static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
+
+    public static final Map<String, CurrencyEntity> CURRENCIES = Map.of(
+            "EUR", eurCurrency(),
+            "USD", usdCurrency(),
+            "GBP", gbpCurrency(),
+            "JPY", jpyCurrency(),
+            "BHD", bhdCurrency()
+    );
+
+    public static PaymentRequestBuilder aPaymentRequest() {
+        return new PaymentRequestBuilder();
+    }
+
+    public static TestPaymentBuilder aPayment() {
+        return new TestPaymentBuilder();
+    }
+
+    public static CurrencyEntityBuilder aCurrency() {
+        return new CurrencyEntityBuilder();
+    }
 
     public static void seedCurrencies(CurrencyRepository currencyRepository) {
         currencyRepository.saveAll(List.of(usdCurrency(), eurCurrency(), gbpCurrency()));
     }
 
-    public static Curr eurCurrency() {
-        return Curr.builder()
+    public static CurrencyEntity usdCurrency() {
+        return aCurrency().build();
+    }
+
+    public static CurrencyEntity eurCurrency() {
+        return aCurrency()
                 .code("EUR").name("Euro")
-                .feePercentage(new BigDecimal("0.0000"))
+                .feeRate(new BigDecimal("0.0000"))
                 .minimumFee(new BigDecimal("0.0000"))
                 .decimals((short) 2)
                 .build();
     }
 
-    public static Curr usdCurrency() {
-        return Curr.builder()
-                .code("USD").name("US Dollar")
-                .feePercentage(new BigDecimal("0.0100"))
-                .minimumFee(new BigDecimal("5.0000"))
-                .decimals((short) 2)
-                .build();
-    }
-
-    public static Curr gbpCurrency() {
-        return Curr.builder()
+    public static CurrencyEntity gbpCurrency() {
+        return aCurrency()
                 .code("GBP").name("British Pound")
-                .feePercentage(new BigDecimal("0.0100"))
+                .feeRate(new BigDecimal("0.0100"))
                 .minimumFee(new BigDecimal("5.0000"))
                 .decimals((short) 2)
                 .build();
     }
 
-    public static Curr jpyCurrency() {
-        return Curr.builder()
+    public static CurrencyEntity jpyCurrency() {
+        return aCurrency()
                 .code("JPY").name("Japanese Yen")
-                .feePercentage(new BigDecimal("0.0100"))
+                .feeRate(new BigDecimal("0.0100"))
                 .minimumFee(new BigDecimal("500"))
                 .decimals((short) 0)
                 .build();
     }
 
-    public static Curr bhdCurrency() {
-        return Curr.builder()
+    public static CurrencyEntity bhdCurrency() {
+        return aCurrency()
                 .code("BHD").name("Bahraini Dinar")
-                .feePercentage(new BigDecimal("0.0100"))
+                .feeRate(new BigDecimal("0.0100"))
                 .minimumFee(new BigDecimal("2.000"))
                 .decimals((short) 3)
-                .build();
-    }
-
-    public static Payment.PaymentBuilder defaultPaymentBuilder() {
-        return Payment.builder()
-                .amount(new BigDecimal("100.0000"))
-                .currency("USD")
-                .recipient("Test Recipient")
-                .recipientAccount(FINNISH_IBAN)
-                .processingFee(new BigDecimal("5.0000"))
-                .status(PaymentStatus.COMPLETED);
-    }
-
-    public static PaymentRequest paymentRequest() {
-        return paymentRequest(new BigDecimal("100.00"), "USD");
-    }
-
-    public static PaymentRequest paymentRequest(BigDecimal amount, String currency) {
-        return new PaymentRequest(amount, currency, "John Doe", ESTONIAN_IBAN);
-    }
-
-    public static Payment paymentEntity(UUID id, PaymentRequest request, BigDecimal fee) {
-        return Payment.builder()
-                .id(id)
-                .amount(request.amount())
-                .currency(request.currency())
-                .recipient(request.recipient())
-                .recipientAccount(request.recipientAccount())
-                .processingFee(fee)
-                .status(PaymentStatus.COMPLETED)
-                .createdAt(Instant.parse("2025-01-15T10:30:00Z"))
                 .build();
     }
 }

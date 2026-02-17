@@ -1,0 +1,15 @@
+<div class="container py-4">
+    <h1 class="mb-4">FX Payment Processor</h1>
+    @if (notification(); as n) {
+        <div class="alert mb-3"
+             [class.alert-danger]="n.type === 'error'"
+             [class.alert-success]="n.type === 'success'"
+             role="alert">
+            {{ n.message }}
+            <button type="button" class="btn-close float-end" aria-label="Close"
+                    (click)="clearNotification()"></button>
+        </div>
+    }
+    <app-payment-form></app-payment-form>
+    <app-payment-history></app-payment-history>
+</div>

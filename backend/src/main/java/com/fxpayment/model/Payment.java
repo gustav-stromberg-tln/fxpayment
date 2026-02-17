@@ -1,11 +1,22 @@
 package com.fxpayment.model;
 
-import jakarta.persistence.*;
+import com.fxpayment.util.PaymentConstants;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
+import org.hibernate.generator.EventType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +24,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
-@SoftDelete
+@SoftDelete(strategy = SoftDeleteType.DELETED)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,42 +35,33 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, precision = 19, scale = 4)
+    @Column(nullable = false, precision = PaymentConstants.MONEY_PRECISION, scale = PaymentConstants.INTERNAL_SCALE)
     private BigDecimal amount;
 
-    @Column(nullable = false, length = 3)
+    @Column(nullable = false, length = PaymentConstants.CURRENCY_CODE_LENGTH)
     private String currency;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = PaymentConstants.MAX_RECIPIENT_LENGTH)
     private String recipient;
 
     @Column(name = "recipient_account", nullable = false)
     private String recipientAccount;
 
-    @Column(name = "processing_fee", nullable = false, precision = 19, scale = 4)
+    @Column(name = "processing_fee", nullable = false, precision = PaymentConstants.MONEY_PRECISION, scale = PaymentConstants.INTERNAL_SCALE)
     private BigDecimal processingFee;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private PaymentStatus status = PaymentStatus.PENDING;
+    @Column(nullable = false, length = PaymentConstants.STATUS_MAX_LENGTH)
+    private PaymentStatus status;
 
-    @Column(name = "created_by")
-    private String createdBy;
+    @Column(name = "idempotency_key", nullable = false, length = PaymentConstants.UUID_STRING_LENGTH, unique = true)
+    private String idempotencyKey;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", updatable = false)
+    @CurrentTimestamp(event = EventType.INSERT)
     private Instant createdAt;
 
     @Column(name = "updated_at")
+    @CurrentTimestamp(event = {EventType.INSERT, EventType.UPDATE})
     private Instant updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = Instant.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = Instant.now();
-    }
 }

@@ -1,0 +1,102 @@
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="card-title h5 mb-3">New Payment</h2>
+
+        <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <input id="amount" type="number" class="form-control" formControlName="amount"
+                       [min]="amountStep()" [step]="amountStep()" [max]="maxAmount"
+                       [class.is-invalid]="isFieldInvalid('amount')">
+                @if (showError('amount', 'max')) {
+                    <div class="invalid-feedback d-block">
+                        Amount exceeds maximum transaction limit of {{ maxAmount | number }}.
+                    </div>
+                } @else {
+                    <div class="invalid-feedback">
+                        Amount must be a positive number.
+                    </div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label for="currency" class="form-label">Currency</label>
+                @if (currenciesLoading()) {
+                    <div class="form-control text-muted" aria-label="Loading currencies">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Loading currencies...
+                    </div>
+                } @else if (currenciesError()) {
+                    <div class="alert alert-danger py-2 mb-0 d-flex align-items-center">
+                        <span>Failed to load currencies.</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+                                (click)="retryCurrencies()">Retry</button>
+                    </div>
+                } @else {
+                    <select id="currency" class="form-select" formControlName="currency"
+                            [class.is-invalid]="isFieldInvalid('currency')">
+                        <option value="" disabled>Select currency</option>
+                        @for (c of currencies(); track c.code) {
+                            <option [value]="c.code">
+                                {{ c.code }} - {{ c.name }}
+                            </option>
+                        }
+                    </select>
+                    <div class="invalid-feedback">
+                        Currency is required.
+                    </div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label for="recipient" class="form-label">Recipient</label>
+                <input id="recipient" type="text" class="form-control" formControlName="recipient"
+                       [maxlength]="maxRecipientLength"
+                       [class.is-invalid]="isFieldInvalid('recipient')">
+                @if (showError('recipient', 'required')) {
+                    <div class="invalid-feedback d-block">
+                        Recipient is required.
+                    </div>
+                } @else if (showError('recipient', 'minlength')) {
+                    <div class="invalid-feedback d-block">
+                        Recipient name must be at least {{ minRecipientLength }} characters.
+                    </div>
+                } @else if (showError('recipient', 'maxlength')) {
+                    <div class="invalid-feedback d-block">
+                        Recipient name must not exceed {{ maxRecipientLength }} characters.
+                    </div>
+                } @else if (showError('recipient', 'pattern')) {
+                    <div class="invalid-feedback d-block">
+                        Recipient name must contain only Latin letters. Numbers and non-Latin characters are not
+                        allowed.
+                    </div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label for="recipientAccount" class="form-label">Recipient Account (IBAN)</label>
+                <input id="recipientAccount" type="text" class="form-control" formControlName="recipientAccount"
+                       placeholder="e.g. DE89370400440532013000"
+                       [class.is-invalid]="isFieldInvalid('recipientAccount')">
+                @if (showError('recipientAccount', 'required')) {
+                    <div class="invalid-feedback d-block">
+                        Recipient account is required.
+                    </div>
+                } @else if (showError('recipientAccount', 'iban')) {
+                    <div class="invalid-feedback d-block">
+                        Invalid IBAN format.
+                    </div>
+                }
+            </div>
+
+            <button type="submit" class="btn btn-primary" [disabled]="paymentForm.invalid || submitting()">
+                @if (submitting()) {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    Submitting...
+                } @else {
+                    Submit Payment
+                }
+            </button>
+        </form>
+    </div>
+</div>

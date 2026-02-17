@@ -32,3 +32,7 @@ replay_pid*
 # Environment
 .env
 /backend/target/
+/frontend/node_modules/
+/frontend/.angular/
+/frontend/dist/
+.DS_Store

@@ -1,43 +1,37 @@
 package com.fxpayment.service;
 
-import com.fxpayment.model.Curr;
-import lombok.RequiredArgsConstructor;
+import com.fxpayment.model.CurrencyEntity;
+import com.fxpayment.util.MoneyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FeeCalculationService {
 
-    private final CurrencyService currencyService;
-
-    public BigDecimal calculateFee(BigDecimal amount, String currencyCode) {
-        Curr currency = currencyService.findByCode(currencyCode)
-                .orElseThrow(() -> {
-                    log.error("Unsupported currency code requested: {}", currencyCode);
-                    return new IllegalArgumentException("Unsupported currency code");
-                });
-
-        int scale = currency.getDecimals();
-
-        if (currency.getFeePercentage().compareTo(BigDecimal.ZERO) == 0) {
-            log.debug("Zero-fee currency: {}", currencyCode);
-            return BigDecimal.ZERO.setScale(scale, RoundingMode.HALF_UP);
+    public BigDecimal calculateFee(BigDecimal amount, CurrencyEntity currency) {
+        if (amount == null || currency == null || currency.getFeeRate() == null) {
+            return MoneyUtil.zeroWithInternalScale();
         }
 
-        BigDecimal percentageFee = amount.multiply(currency.getFeePercentage())
-                .setScale(scale, RoundingMode.HALF_UP);
-        BigDecimal minimumFee = currency.getMinimumFee().setScale(scale, RoundingMode.HALF_UP);
-        BigDecimal appliedFee = percentageFee.compareTo(minimumFee) < 0
-                ? minimumFee
-                : percentageFee;
+        if (amount.signum() < 0) {
+            log.error("Negative amount rejected: currency={}, amount={}", currency.getCode(), amount);
+            throw new IllegalArgumentException("Fee calculation requires a positive amount, got: " + amount);
+        }
 
-        log.debug("Fee calculated for {} {}: percentageFee={}, minimumFee={}, appliedFee={}",
-                amount, currencyCode, percentageFee, minimumFee, appliedFee);
-        return appliedFee;
+        if (currency.getFeeRate().signum() == 0) {
+            return MoneyUtil.zeroWithInternalScale();
+        }
+
+        BigDecimal percentageFee = amount.multiply(currency.getFeeRate());
+        BigDecimal minimumFee = currency.getMinimumFee() != null ?
+                currency.getMinimumFee() : BigDecimal.ZERO;
+
+        BigDecimal result = percentageFee.max(minimumFee);
+        BigDecimal rounded = MoneyUtil.roundToInternalScale(result);
+        log.debug("Fee calculated: currency={}, amount={}, fee={}", currency.getCode(), amount, rounded);
+        return rounded;
     }
 }

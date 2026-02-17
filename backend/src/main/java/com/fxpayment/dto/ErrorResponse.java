@@ -8,6 +8,10 @@ public record ErrorResponse(
         int status,
         List<String> errors
 ) {
+    public ErrorResponse {
+        errors = List.copyOf(errors);
+    }
+
     public static ErrorResponse of(int status, String error) {
         return new ErrorResponse(Instant.now().toString(), status, List.of(error));
     }
