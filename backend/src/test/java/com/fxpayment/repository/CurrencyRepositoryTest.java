@@ -2,6 +2,7 @@ package com.fxpayment.repository;
 
 import com.fxpayment.annotation.RepositoryTest;
 import com.fxpayment.model.CurrencyEntity;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +29,9 @@ class CurrencyRepositoryTest {
     @Autowired
     private CurrencyRepository currencyRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @BeforeEach
     void setUp() {
         seedCurrencies(currencyRepository);
@@ -40,6 +45,8 @@ class CurrencyRepositoryTest {
         assertEquals(0, STANDARD_FEE_RATE.compareTo(usd.getFeeRate()));
         assertEquals(0, STANDARD_MINIMUM_FEE.compareTo(usd.getMinimumFee()));
         assertEquals(2, usd.getDecimals());
+        assertNotNull(usd.getCreatedAt());
+        assertNotNull(usd.getUpdatedAt());
     }
 
     @Test
@@ -50,6 +57,8 @@ class CurrencyRepositoryTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(eur.getFeeRate()));
         assertEquals(0, BigDecimal.ZERO.compareTo(eur.getMinimumFee()));
         assertEquals(2, eur.getDecimals());
+        assertNotNull(eur.getCreatedAt());
+        assertNotNull(eur.getUpdatedAt());
     }
 
     @Test
@@ -60,6 +69,8 @@ class CurrencyRepositoryTest {
         assertEquals(0, STANDARD_FEE_RATE.compareTo(gbp.getFeeRate()));
         assertEquals(0, STANDARD_MINIMUM_FEE.compareTo(gbp.getMinimumFee()));
         assertEquals(2, gbp.getDecimals());
+        assertNotNull(gbp.getCreatedAt());
+        assertNotNull(gbp.getUpdatedAt());
     }
 
     @Test
@@ -72,6 +83,8 @@ class CurrencyRepositoryTest {
         assertEquals("Japanese Yen", found.getName());
         assertEquals(0, STANDARD_FEE_RATE.compareTo(found.getFeeRate()));
         assertEquals(0, found.getDecimals());
+        assertNotNull(found.getCreatedAt());
+        assertNotNull(found.getUpdatedAt());
     }
 
     @Test
@@ -84,6 +97,8 @@ class CurrencyRepositoryTest {
         assertEquals("Bahraini Dinar", found.getName());
         assertEquals(0, STANDARD_FEE_RATE.compareTo(found.getFeeRate()));
         assertEquals(3, found.getDecimals());
+        assertNotNull(found.getCreatedAt());
+        assertNotNull(found.getUpdatedAt());
     }
 
     @Test
@@ -108,13 +123,15 @@ class CurrencyRepositoryTest {
                 .minimumFee(new BigDecimal("3.0000"))
                 .build();
 
-        CurrencyEntity saved = currencyRepository.save(currency);
+        CurrencyEntity saved = currencyRepository.saveAndFlush(currency);
 
         assertEquals(currency.getCode(), saved.getCode());
         assertEquals(currency.getName(), saved.getName());
         assertEquals(0, currency.getFeeRate().compareTo(saved.getFeeRate()));
         assertEquals(0, currency.getMinimumFee().compareTo(saved.getMinimumFee()));
         assertEquals(currency.getDecimals(), saved.getDecimals());
+        assertNotNull(saved.getCreatedAt());
+        assertNotNull(saved.getUpdatedAt());
     }
 
     @Test
@@ -125,6 +142,43 @@ class CurrencyRepositoryTest {
         CurrencyEntity found = currencyRepository.findById(currency.getCode()).orElseThrow();
 
         assertEquals(currency.getDecimals(), found.getDecimals());
+    }
+
+    @Test
+    void saveShouldSetCreatedAtAndUpdatedAtOnInsert() {
+        CurrencyEntity currency = jpyCurrency();
+
+        CurrencyEntity saved = currencyRepository.saveAndFlush(currency);
+
+        assertNotNull(saved.getCreatedAt());
+        assertNotNull(saved.getUpdatedAt());
+        assertTrue(Duration.between(saved.getCreatedAt(), saved.getUpdatedAt()).abs().toMillis() < 1,
+                "createdAt and updatedAt should be set within 1ms of each other on insert");
+    }
+
+    @Test
+    void onUpdateShouldSetUpdatedAtTimestamp() {
+        CurrencyEntity original = jpyCurrency();
+        CurrencyEntity saved = currencyRepository.saveAndFlush(original);
+        assertNotNull(saved.getCreatedAt());
+        assertNotNull(saved.getUpdatedAt());
+
+        CurrencyEntity modified = aCurrency()
+                .code(saved.getCode()).name("Updated Yen")
+                .feeRate(new BigDecimal("0.0200"))
+                .minimumFee(new BigDecimal("10.0000"))
+                .decimals(saved.getDecimals())
+                .createdAt(saved.getCreatedAt())
+                .build();
+        entityManager.merge(modified);
+        entityManager.flush();
+        entityManager.clear();
+
+        CurrencyEntity updated = currencyRepository.findById(saved.getCode()).orElseThrow();
+        assertNotNull(updated.getUpdatedAt());
+        assertFalse(updated.getUpdatedAt().isBefore(saved.getCreatedAt()),
+                "updatedAt must not be before createdAt");
+        assertEquals("Updated Yen", updated.getName());
     }
 
     @Test

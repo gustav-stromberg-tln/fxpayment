@@ -22,7 +22,9 @@ class CurrencyControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[*].name").exists())
                 .andExpect(jsonPath("$[*].decimals").exists())
                 .andExpect(jsonPath("$[0].feeRate").doesNotExist())
-                .andExpect(jsonPath("$[0].minimumFee").doesNotExist());
+                .andExpect(jsonPath("$[0].minimumFee").doesNotExist())
+                .andExpect(jsonPath("$[0].createdAt").doesNotExist())
+                .andExpect(jsonPath("$[0].updatedAt").doesNotExist());
     }
 
     @Test

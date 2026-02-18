@@ -43,7 +43,7 @@ public final class TestDataFactory {
     }
 
     public static void seedCurrencies(CurrencyRepository currencyRepository) {
-        currencyRepository.saveAll(List.of(usdCurrency(), eurCurrency(), gbpCurrency()));
+        currencyRepository.saveAllAndFlush(List.of(usdCurrency(), eurCurrency(), gbpCurrency()));
     }
 
     public static CurrencyEntity usdCurrency() {
