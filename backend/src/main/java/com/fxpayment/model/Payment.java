@@ -57,11 +57,11 @@ public class Payment {
     @Column(name = "idempotency_key", nullable = false, length = PaymentConstants.UUID_STRING_LENGTH, unique = true)
     private String idempotencyKey;
 
-    @Column(name = "created_at", updatable = false)
     @CurrentTimestamp(event = EventType.INSERT)
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
     @CurrentTimestamp(event = {EventType.INSERT, EventType.UPDATE})
+    @Column(name = "updated_at")
     private Instant updatedAt;
 }

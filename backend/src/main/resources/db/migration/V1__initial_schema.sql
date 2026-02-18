@@ -1,11 +1,3 @@
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE TABLE currencies (
     code            VARCHAR(3)      PRIMARY KEY,
     name            VARCHAR(255)    NOT NULL,
@@ -37,16 +29,6 @@ CREATE TABLE payments (
 
     CONSTRAINT fk_payment_currency FOREIGN KEY (currency) REFERENCES currencies(code)
 );
-
-CREATE TRIGGER trigger_update_currencies_timestamp
-    BEFORE UPDATE ON currencies
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER trigger_update_payments_timestamp
-    BEFORE UPDATE ON payments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
 
 CREATE INDEX idx_payments_active_by_time
     ON payments (created_at DESC)

@@ -11,8 +11,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.generator.EventType;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "currencies")
@@ -39,4 +42,12 @@ public class CurrencyEntity {
     @Max(PaymentConstants.MAX_CURRENCY_DECIMALS)
     @Column(nullable = false)
     private short decimals;
+
+    @CurrentTimestamp(event = EventType.INSERT)
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @CurrentTimestamp(event = {EventType.INSERT, EventType.UPDATE})
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 }

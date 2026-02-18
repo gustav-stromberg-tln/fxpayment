@@ -81,6 +81,8 @@ Two tables managed by Flyway migrations:
 | `fee_rate`  | `NUMERIC(9,6)` | Percentage as decimal (0.01 = 1%) |
 | `minimum_fee` | `NUMERIC(19,4)` | Floor for fee calculation |
 | `decimals`  | `SMALLINT`     | ISO 4217 minor units (0-4); enforced by CHECK constraint |
+| `created_at` | `TIMESTAMPTZ` | Set by Hibernate `@CurrentTimestamp` on insert |
+| `updated_at` | `TIMESTAMPTZ` | Set by Hibernate `@CurrentTimestamp` on insert and update |
 
 ### `payments` (transaction records)
 
@@ -95,8 +97,8 @@ Two tables managed by Flyway migrations:
 | `processing_fee`  | `NUMERIC(19,4)` | Calculated fee stored alongside the payment |
 | `status`          | `VARCHAR(20)`   | CHECK constraint limits to PENDING/PROCESSING/COMPLETED/FAILED/REFUNDED |
 | `deleted`         | `BOOLEAN`       | Soft-delete flag; Hibernate `@SoftDelete` adds `WHERE deleted = false` to all queries |
-| `created_at`      | `TIMESTAMPTZ`   | Auto-set; descending index for paginated listing |
-| `updated_at`      | `TIMESTAMPTZ`   | Auto-set by Hibernate `@CurrentTimestamp` + database trigger |
+| `created_at`      | `TIMESTAMPTZ`   | Set by Hibernate `@CurrentTimestamp` on insert; descending index for paginated listing |
+| `updated_at`      | `TIMESTAMPTZ`   | Set by Hibernate `@CurrentTimestamp` on insert and update |
 
 ### Schema Design Decisions
 
@@ -108,7 +110,7 @@ Two tables managed by Flyway migrations:
 
 **Foreign key on `currency`.** Prevents payments referencing non-existent currencies. The currency table is the source of truth for fee configuration.
 
-**Database triggers + Hibernate `@CurrentTimestamp`.** `updated_at` is maintained by a `plpgsql` trigger (catches raw SQL updates) and Hibernate's `@CurrentTimestamp(event = {INSERT, UPDATE})` with DB-sourced timestamps. Both use PostgreSQL's `CURRENT_TIMESTAMP` (transaction start time), so they produce identical values within the same transaction. Hibernate automatically re-reads the column after each write, keeping the in-memory entity consistent with the database. This avoids the clock-skew and stale-entity problems that arise from mixing Java-side `@PreUpdate` callbacks with database triggers.
+**Application-managed timestamps.** Both `created_at` and `updated_at` are managed by Hibernate via `@CurrentTimestamp(event = EventType.INSERT)` and `@CurrentTimestamp(event = {EventType.INSERT, EventType.UPDATE})` respectively. Hibernate generates the timestamp value before building the INSERT/UPDATE SQL, so the column is always populated. The database columns still carry a `DEFAULT CURRENT_TIMESTAMP`, but this only applies to raw SQL statements that omit the column entirely. In a single-owner microservice this is simpler than database triggers: timestamp behaviour is visible in the entity class, testable without a database, and avoids hidden side effects that triggers introduce.
 
 **Fee configuration in the database, not code.** Fee rates and minimums are columns on the `currencies` table rather than application constants. Adding a new currency or changing a fee rate is a data change, not a code deployment.
 

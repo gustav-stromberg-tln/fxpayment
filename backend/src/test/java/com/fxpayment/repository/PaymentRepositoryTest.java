@@ -110,17 +110,12 @@ class PaymentRepositoryTest {
 
     @Test
     void onUpdateShouldSetUpdatedAtTimestamp() {
-        // Note: In production, a PostgreSQL trigger (update_updated_at_column) also sets
-        // updated_at on every UPDATE including raw SQL. In H2, Hibernate's
-        // @CurrentTimestamp handles this by generating current_timestamp in the SQL.
-        // Consider Testcontainers with PostgreSQL to test trigger behaviour.
+        // @CurrentTimestamp makes Hibernate set createdAt on INSERT and updatedAt on INSERT+UPDATE.
         Payment payment = aPayment().build();
 
         Payment saved = paymentRepository.saveAndFlush(payment);
         assertNotNull(saved.getCreatedAt());
         assertNotNull(saved.getUpdatedAt());
-
-        // @CurrentTimestamp generates both from DB's current_timestamp in the same INSERT
         assertTrue(java.time.Duration.between(saved.getCreatedAt(), saved.getUpdatedAt()).abs().toMillis() < 1,
                 "createdAt and updatedAt should be set within 1ms of each other on insert");
 
