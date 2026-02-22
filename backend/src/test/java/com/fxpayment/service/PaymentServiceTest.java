@@ -314,20 +314,6 @@ class PaymentServiceTest {
     }
 
     @Test
-    void newPaymentShouldPopulateCache() {
-        stubNoExistingPayment();
-        stubValidation("USD");
-        when(feeCalculationService.calculateFee(any(BigDecimal.class), any(CurrencyEntity.class))).thenReturn(USD_FEE);
-        Payment savedPayment = aPayment().id(ID_1).build();
-        when(paymentRepository.saveAndFlush(any(Payment.class))).thenReturn(savedPayment);
-        String idempotencyKey = newIdempotencyKey();
-
-        paymentService.createPayment(idempotencyKey, request);
-
-        verify(idempotencyCacheService).cachePayment(idempotencyKey, savedPayment);
-    }
-
-    @Test
     void createPaymentShouldThrowPaymentProcessingExceptionOnDatabaseFailure() {
         stubNoExistingPayment();
         stubValidation("USD");

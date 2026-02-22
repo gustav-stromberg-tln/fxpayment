@@ -109,7 +109,7 @@ describe('PaymentHistoryComponent', () => {
         expect(compiled.textContent).toContain('No payments yet.');
     });
 
-    it('should render error alert when loadError is true', () => {
+    it('should render error alert with retry button when loadError is true', () => {
         component.loadError.set(true);
         component.loading.set(false);
         fixture.detectChanges();
@@ -117,6 +117,29 @@ describe('PaymentHistoryComponent', () => {
         const compiled = fixture.nativeElement as HTMLElement;
         expect(compiled.querySelector('.alert-danger')).toBeTruthy();
         expect(compiled.textContent).toContain('Failed to load payments');
+        const retryButton = compiled.querySelector('.alert-danger .btn-outline-danger');
+        expect(retryButton).toBeTruthy();
+        expect(retryButton?.textContent).toContain('Retry');
+    });
+
+    it('should reload payments when retry button is clicked', async () => {
+        await fixture.whenStable();
+        paymentServiceSpy.getPayments.mockReturnValue(throwError(() => new Error('Network error')));
+
+        component.totalPages.set(3);
+        component.nextPage();
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        expect(component.loadError()).toBe(true);
+        paymentServiceSpy.getPayments.mockClear();
+        paymentServiceSpy.getPayments.mockReturnValue(of(emptyPage));
+
+        component.retryLoad();
+        await fixture.whenStable();
+
+        expect(paymentServiceSpy.getPayments).toHaveBeenCalledWith(component.currentPage(), DEFAULT_PAGE_SIZE);
+        expect(component.loadError()).toBe(false);
     });
 
     it('should display payment table when payments are loaded via data pipeline', async () => {

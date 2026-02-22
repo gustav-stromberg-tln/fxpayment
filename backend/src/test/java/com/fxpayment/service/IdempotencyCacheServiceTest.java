@@ -62,24 +62,6 @@ class IdempotencyCacheServiceTest {
     }
 
     @Test
-    void cachePaymentShouldReturnPaymentWithAllFields() {
-        String idempotencyKey = newIdempotencyKey();
-        Payment payment = aPayment().id(PAYMENT_ID).build();
-
-        Optional<Payment> result = idempotencyCacheService.cachePayment(idempotencyKey, payment);
-
-        assertTrue(result.isPresent());
-        Payment cached = result.get();
-        assertEquals(PAYMENT_ID, cached.getId());
-        assertEquals(new BigDecimal("100.0000"), cached.getAmount());
-        assertEquals("USD", cached.getCurrency());
-        assertEquals("John Doe", cached.getRecipient());
-        assertEquals(ESTONIAN_IBAN, cached.getRecipientAccount());
-        assertEquals(new BigDecimal("5.0000"), cached.getProcessingFee());
-        assertEquals(PaymentStatus.COMPLETED, cached.getStatus());
-    }
-
-    @Test
     void findExistingPaymentShouldReturnDiversePaymentData() {
         String idempotencyKey = newIdempotencyKey();
         Payment payment = aPayment()

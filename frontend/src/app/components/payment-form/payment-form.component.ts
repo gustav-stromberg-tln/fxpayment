@@ -113,13 +113,17 @@ export class PaymentFormComponent {
         }
 
         this.submitting.set(true);
+        this.paymentForm.disable({emitEvent: false});
 
         const request: PaymentRequest = {amount, currency, recipient, recipientAccount};
 
         this.paymentService.createPayment(request, this.idempotencyKey)
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
-                finalize(() => this.submitting.set(false)),
+                finalize(() => {
+                    this.paymentForm.enable({emitEvent: false});
+                    this.submitting.set(false);
+                }),
                 catchError(() => EMPTY)
             )
             .subscribe(() => {

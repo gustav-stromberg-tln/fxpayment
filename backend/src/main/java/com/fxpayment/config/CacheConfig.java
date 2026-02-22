@@ -29,7 +29,8 @@ public class CacheConfig {
 
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
-                buildCurrencyCache("currencies", currency),
+                buildCurrencyCache("allCurrencies", currency),
+                buildCurrencyCache("currencyByCode", currency),
                 new CaffeineCache("idempotencyKeys", Caffeine.newBuilder()
                         .maximumSize(idempotency.maxSize())
                         .expireAfterWrite(idempotency.ttl())

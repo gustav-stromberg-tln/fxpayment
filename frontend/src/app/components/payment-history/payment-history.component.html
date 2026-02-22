@@ -2,8 +2,10 @@
     <div class="card-body">
         <h2 class="card-title h5 mb-3">Payment History</h2>
         @if (loadError()) {
-            <div class="alert alert-danger">
-                Failed to load payments. Please try again later.
+            <div class="alert alert-danger d-flex align-items-center">
+                <span>Failed to load payments.</span>
+                <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+                        (click)="retryLoad()">Retry</button>
             </div>
         } @else if (loading() && payments().length === 0) {
             <div class="text-center py-4">

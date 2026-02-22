@@ -97,7 +97,6 @@ public class PaymentService {
 
         try {
             Payment saved = paymentRepository.saveAndFlush(payment);
-            idempotencyCacheService.cachePayment(idempotencyKey, saved);
             log.info("Payment persisted: id={}, amount={}, currency={}, idempotencyKey={}",
                     saved.getId(), saved.getAmount(), saved.getCurrency(), idempotencyKey);
             return saved;

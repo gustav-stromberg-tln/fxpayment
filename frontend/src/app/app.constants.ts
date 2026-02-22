@@ -5,3 +5,4 @@ export const MAX_RECIPIENT_LENGTH = 140;
 export const RECIPIENT_NAME_PATTERN = /^[\p{Script=Latin}\p{M} ]+$/u;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_VISIBLE_PAGES = 5;
+export const NOTIFICATION_AUTO_DISMISS_MS = 5000;

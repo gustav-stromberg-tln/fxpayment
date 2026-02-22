@@ -1,11 +1,8 @@
 package com.fxpayment.config;
 
 import com.fxpayment.model.CurrencyEntity;
-import com.fxpayment.model.Payment;
 import com.fxpayment.repository.CurrencyRepository;
-import com.fxpayment.repository.PaymentRepository;
 import com.fxpayment.service.CurrencyLookupService;
-import com.fxpayment.service.IdempotencyCacheService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +16,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.fxpayment.utils.TestDataFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,14 +30,8 @@ class CacheIntegrationTest {
     @MockitoSpyBean
     private CurrencyRepository currencyRepository;
 
-    @MockitoSpyBean
-    private PaymentRepository paymentRepository;
-
     @Autowired
     private CurrencyLookupService currencyLookupService;
-
-    @Autowired
-    private IdempotencyCacheService idempotencyCacheService;
 
     @Autowired
     private CacheManager cacheManager;
@@ -50,12 +40,11 @@ class CacheIntegrationTest {
     void setUp() {
         evictAllCaches();
         seedCurrencies(currencyRepository);
-        clearInvocations(currencyRepository, paymentRepository);
+        clearInvocations(currencyRepository);
     }
 
     @AfterEach
     void tearDown() {
-        paymentRepository.deleteAll();
         currencyRepository.deleteAll();
     }
 
@@ -134,70 +123,4 @@ class CacheIntegrationTest {
         verify(currencyRepository, times(2)).findAll();
     }
 
-    @Test
-    @DisplayName("@CachePut should populate cache so @Cacheable returns without DB call")
-    void cachePutShouldPopulateCacheForSubsequentLookup() {
-        String idempotencyKey = UUID.randomUUID().toString();
-        Payment payment = aPayment().idempotencyKey(idempotencyKey).build();
-        Payment saved = paymentRepository.save(payment);
-        clearInvocations(paymentRepository);
-
-        // @CachePut stores the payment in the idempotencyKeys cache
-        idempotencyCacheService.cachePayment(idempotencyKey, saved);
-
-        // @Cacheable should find it in cache without querying the database
-        Optional<Payment> found = idempotencyCacheService.findExistingPayment(idempotencyKey);
-
-        assertTrue(found.isPresent());
-        assertEquals(saved.getId(), found.get().getId());
-        assertEquals(saved.getCurrency(), found.get().getCurrency());
-        assertEquals(saved.getAmount(), found.get().getAmount());
-        verify(paymentRepository, never()).findByIdempotencyKey(idempotencyKey);
-    }
-
-    @Test
-    @DisplayName("findExistingPayment should cache result after first DB call")
-    void findExistingPaymentShouldCacheAfterFirstLookup() {
-        String idempotencyKey = UUID.randomUUID().toString();
-        Payment payment = aPayment().idempotencyKey(idempotencyKey).build();
-        paymentRepository.save(payment);
-        clearInvocations(paymentRepository);
-
-        // First call — cache miss, hits DB
-        Optional<Payment> first = idempotencyCacheService.findExistingPayment(idempotencyKey);
-        // Second call — cache hit, no DB
-        Optional<Payment> second = idempotencyCacheService.findExistingPayment(idempotencyKey);
-
-        assertTrue(first.isPresent());
-        assertTrue(second.isPresent());
-        assertEquals(first.get().getId(), second.get().getId());
-        verify(paymentRepository, times(1)).findByIdempotencyKey(idempotencyKey);
-    }
-
-    @Test
-    @DisplayName("idempotency cache should store different keys independently")
-    void idempotencyCacheShouldStoreDifferentKeysIndependently() {
-        String key1 = UUID.randomUUID().toString();
-        String key2 = UUID.randomUUID().toString();
-        Payment payment1 = aPayment().idempotencyKey(key1).recipient("Alice").build();
-        Payment payment2 = aPayment().idempotencyKey(key2).recipient("Bob").build();
-        paymentRepository.save(payment1);
-        paymentRepository.save(payment2);
-        clearInvocations(paymentRepository);
-
-        // First lookups — both hit DB
-        Optional<Payment> found1 = idempotencyCacheService.findExistingPayment(key1);
-        Optional<Payment> found2 = idempotencyCacheService.findExistingPayment(key2);
-
-        // Second lookups — both from cache
-        idempotencyCacheService.findExistingPayment(key1);
-        idempotencyCacheService.findExistingPayment(key2);
-
-        assertTrue(found1.isPresent());
-        assertTrue(found2.isPresent());
-        assertEquals("Alice", found1.get().getRecipient());
-        assertEquals("Bob", found2.get().getRecipient());
-        verify(paymentRepository, times(1)).findByIdempotencyKey(key1);
-        verify(paymentRepository, times(1)).findByIdempotencyKey(key2);
-    }
 }

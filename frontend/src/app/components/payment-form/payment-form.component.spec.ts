@@ -281,6 +281,45 @@ describe('PaymentFormComponent', () => {
         expect(notificationServiceSpy.showSuccess).toHaveBeenCalledWith('Payment submitted successfully.');
     });
 
+    it('should disable form during submission and re-enable after', () => {
+        const responseSubject = new Subject<PaymentResponse>();
+        paymentServiceSpy.createPayment.mockReturnValue(responseSubject.asObservable());
+
+        component.paymentForm.setValue({
+            amount: 100,
+            currency: 'USD',
+            recipient: 'John Doe',
+            recipientAccount: 'DE89370400440532013000'
+        });
+
+        component.onSubmit();
+
+        expect(component.paymentForm.disabled).toBe(true);
+
+        responseSubject.next({
+            id: '1', amount: '100.00', currency: 'USD',
+            recipient: 'John Doe', processingFee: '1.50', createdAt: '2024-01-01T00:00:00Z'
+        });
+        responseSubject.complete();
+
+        expect(component.paymentForm.enabled).toBe(true);
+    });
+
+    it('should re-enable form after submission error', () => {
+        paymentServiceSpy.createPayment.mockReturnValue(throwError(() => new Error('API error')));
+
+        component.paymentForm.setValue({
+            amount: 100,
+            currency: 'USD',
+            recipient: 'John Doe',
+            recipientAccount: 'DE89370400440532013000'
+        });
+
+        component.onSubmit();
+
+        expect(component.paymentForm.enabled).toBe(true);
+    });
+
     it('should reset the form after successful submission', () => {
         const mockResponse: PaymentResponse = {
             id: '1', amount: '50.00', currency: 'EUR',

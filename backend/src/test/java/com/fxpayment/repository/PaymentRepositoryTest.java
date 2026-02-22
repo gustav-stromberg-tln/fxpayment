@@ -153,33 +153,6 @@ class PaymentRepositoryTest {
                 () -> paymentRepository.saveAndFlush(duplicate));
     }
 
-    @Test
-    void softDeletedPaymentsShouldNotAppearInQueries() {
-        Payment payment = aPayment().recipient("Deleted User").build();
-        UUID paymentId = paymentRepository.save(payment).getId();
-
-        paymentRepository.deleteById(paymentId);
-
-        Optional<Payment> found = paymentRepository.findById(paymentId);
-        assertTrue(found.isEmpty());
-
-        Page<Payment> page = paymentRepository.findAll(PageRequest.of(0, 100));
-        assertTrue(page.getContent().stream()
-                .noneMatch(p -> paymentId.equals(p.getId())));
-    }
-
-    @Test
-    void softDeletedPaymentShouldNotBeFoundByIdempotencyKey() {
-        String idempotencyKey = UUID.randomUUID().toString();
-        Payment payment = aPayment().idempotencyKey(idempotencyKey).build();
-        UUID paymentId = paymentRepository.save(payment).getId();
-
-        paymentRepository.deleteById(paymentId);
-
-        Optional<Payment> found = paymentRepository.findByIdempotencyKey(idempotencyKey);
-        assertTrue(found.isEmpty());
-    }
-
     @Nested
     @DisplayName("Data variety: diverse payment profiles")
     class DataVariety {

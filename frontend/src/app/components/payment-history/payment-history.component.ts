@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {toObservable, takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {switchMap, catchError, EMPTY, tap, merge, map} from 'rxjs';
+import {Subject, switchMap, catchError, EMPTY, tap, merge, map} from 'rxjs';
 import {PaymentService} from '../../services/payment.service';
 import {PaymentResponse} from '../../models/payment.model';
 import {CurrencyAmountPipe} from '../../pipes/currency-amount.pipe';
@@ -16,6 +16,7 @@ import {DEFAULT_PAGE_SIZE, MAX_VISIBLE_PAGES} from '../../app.constants';
 })
 export class PaymentHistoryComponent {
     private readonly paymentService = inject(PaymentService);
+    private readonly retryTrigger = new Subject<number>();
 
     readonly pageSize = DEFAULT_PAGE_SIZE;
 
@@ -54,7 +55,7 @@ export class PaymentHistoryComponent {
             map(() => 0)
         );
 
-        merge(page$, paymentCreated$)
+        merge(page$, paymentCreated$, this.retryTrigger)
             .pipe(
                 tap(() => {
                     this.loading.set(true);
@@ -92,6 +93,10 @@ export class PaymentHistoryComponent {
 
     previousPage(): void {
         this.goToPage(this.currentPage() - 1);
+    }
+
+    retryLoad(): void {
+        this.retryTrigger.next(this.currentPage());
     }
 
 }

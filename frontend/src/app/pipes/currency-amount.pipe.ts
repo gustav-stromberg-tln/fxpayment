@@ -4,7 +4,8 @@ import {CurrencyService} from '../services/currency.service';
 
 @Pipe({
     name: 'currencyAmount',
-    standalone: true
+    standalone: true,
+    pure: false
 })
 export class CurrencyAmountPipe implements PipeTransform {
     private readonly currencyService = inject(CurrencyService);

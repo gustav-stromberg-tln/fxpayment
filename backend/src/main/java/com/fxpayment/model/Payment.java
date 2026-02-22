@@ -14,8 +14,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CurrentTimestamp;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
 import org.hibernate.generator.EventType;
 
 import java.math.BigDecimal;
@@ -24,7 +22,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
-@SoftDelete(strategy = SoftDeleteType.DELETED)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

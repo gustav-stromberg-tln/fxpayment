@@ -2,10 +2,8 @@ package com.fxpayment.service;
 
 import com.fxpayment.dto.CreatePaymentResult;
 import com.fxpayment.dto.PaymentRequest;
-import com.fxpayment.dto.PaymentResponse;
 import com.fxpayment.exception.InvalidRequestException;
 import com.fxpayment.exception.PaymentProcessingException;
-import com.fxpayment.model.CurrencyEntity;
 import com.fxpayment.model.Payment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,14 +23,11 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import com.fxpayment.repository.PaymentRepository;
 
-import java.math.BigDecimal;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.fxpayment.utils.TestDataFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +35,6 @@ import static org.mockito.Mockito.*;
 class PaymentServiceEdgeCaseTest {
 
     private static final UUID ID_1 = UUID.fromString(PAYMENT_UUID_1);
-    private static final BigDecimal USD_FEE = new BigDecimal("5.0000");
 
     @Mock
     private PaymentRepository paymentRepository;
@@ -77,20 +71,6 @@ class PaymentServiceEdgeCaseTest {
 
     private String newIdempotencyKey() {
         return UUID.randomUUID().toString();
-    }
-
-    private void stubNoExistingPayment() {
-        when(idempotencyCacheService.findExistingPayment(anyString())).thenReturn(Optional.empty());
-    }
-
-    private void stubValidation(String code) {
-        when(paymentValidationService.resolveAndValidateCurrency(any(PaymentRequest.class)))
-                .thenReturn(CURRENCIES.get(code));
-    }
-
-    private void stubDecimals(String code) {
-        when(currencyService.getDecimals(code))
-                .thenReturn((int) CURRENCIES.get(code).getDecimals());
     }
 
     @Nested
@@ -163,27 +143,6 @@ class PaymentServiceEdgeCaseTest {
 
             assertThrows(QueryTimeoutException.class,
                     () -> paymentService.getAllPayments(0, 20));
-        }
-    }
-
-    @Nested
-    @DisplayName("Resilience: cache write failures (5c)")
-    class CacheWriteFailure {
-
-        @Test
-        @DisplayName("cache failure after DB save propagates as uncaught exception")
-        void cacheFailureAfterSaveShouldPropagate() {
-            stubNoExistingPayment();
-            stubValidation("USD");
-            when(feeCalculationService.calculateFee(any(BigDecimal.class), any(CurrencyEntity.class)))
-                    .thenReturn(USD_FEE);
-            Payment savedPayment = aPayment().id(ID_1).build();
-            when(paymentRepository.saveAndFlush(any(Payment.class))).thenReturn(savedPayment);
-            doThrow(new RuntimeException("Cache write failed"))
-                    .when(idempotencyCacheService).cachePayment(anyString(), any(Payment.class));
-
-            assertThrows(RuntimeException.class,
-                    () -> paymentService.createPayment(newIdempotencyKey(), request));
         }
     }
 

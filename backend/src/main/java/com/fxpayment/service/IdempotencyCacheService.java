@@ -4,7 +4,6 @@ import com.fxpayment.model.Payment;
 import com.fxpayment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +22,4 @@ public class IdempotencyCacheService {
         return paymentRepository.findByIdempotencyKey(idempotencyKey);
     }
 
-    @CachePut(value = "idempotencyKeys", key = "#idempotencyKey")
-    public Optional<Payment> cachePayment(String idempotencyKey, Payment payment) {
-        return Optional.of(payment);
-    }
 }

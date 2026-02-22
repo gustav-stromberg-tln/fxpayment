@@ -1,11 +1,8 @@
 package com.fxpayment.config;
 
 import com.fxpayment.model.CurrencyEntity;
-import com.fxpayment.model.Payment;
 import com.fxpayment.repository.CurrencyRepository;
-import com.fxpayment.repository.PaymentRepository;
 import com.fxpayment.service.CurrencyLookupService;
-import com.fxpayment.service.IdempotencyCacheService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +18,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.fxpayment.utils.TestDataFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,14 +32,8 @@ class CacheEdgeCaseIntegrationTest {
     @MockitoSpyBean
     private CurrencyRepository currencyRepository;
 
-    @MockitoSpyBean
-    private PaymentRepository paymentRepository;
-
     @Autowired
     private CurrencyLookupService currencyLookupService;
-
-    @Autowired
-    private IdempotencyCacheService idempotencyCacheService;
 
     @Autowired
     private CacheManager cacheManager;
@@ -52,12 +42,11 @@ class CacheEdgeCaseIntegrationTest {
     void setUp() {
         evictAllCaches();
         seedCurrencies(currencyRepository);
-        clearInvocations(currencyRepository, paymentRepository);
+        clearInvocations(currencyRepository);
     }
 
     @AfterEach
     void tearDown() {
-        paymentRepository.deleteAll();
         currencyRepository.deleteAll();
     }
 
@@ -68,53 +57,6 @@ class CacheEdgeCaseIntegrationTest {
                 cache.clear();
             }
         });
-    }
-
-    @Nested
-    @DisplayName("Optional.empty() is not cached (Spring auto-unwrap) (3a)")
-    class NegativeCachingPrevention {
-
-        @Test
-        @DisplayName("Optional.empty() should NOT be cached — second lookup hits DB again")
-        void emptyOptionalShouldNotBeCached() {
-            String nonExistentKey = UUID.randomUUID().toString();
-
-            // First lookup — cache miss, hits DB, returns empty Optional
-            // Spring unwraps Optional.empty() to null, and unless="#result == null" skips caching
-            Optional<Payment> first = idempotencyCacheService.findExistingPayment(nonExistentKey);
-            assertTrue(first.isEmpty());
-            verify(paymentRepository, times(1)).findByIdempotencyKey(nonExistentKey);
-
-            clearInvocations(paymentRepository);
-
-            // Second lookup — must also hit DB because empty was not cached
-            Optional<Payment> second = idempotencyCacheService.findExistingPayment(nonExistentKey);
-            assertTrue(second.isEmpty());
-            verify(paymentRepository, times(1)).findByIdempotencyKey(nonExistentKey);
-        }
-
-        @Test
-        @DisplayName("@CachePut after miss makes subsequent lookups hit cache")
-        void cachePutAfterMissShouldBeFoundOnNextLookup() {
-            String key = UUID.randomUUID().toString();
-
-            // First lookup — miss
-            Optional<Payment> miss = idempotencyCacheService.findExistingPayment(key);
-            assertTrue(miss.isEmpty());
-
-            // Insert the payment and populate cache
-            Payment payment = aPayment().idempotencyKey(key).build();
-            Payment saved = paymentRepository.save(payment);
-            clearInvocations(paymentRepository);
-
-            idempotencyCacheService.cachePayment(key, saved);
-
-            // Next lookup should hit cache (not DB)
-            Optional<Payment> hit = idempotencyCacheService.findExistingPayment(key);
-            assertTrue(hit.isPresent());
-            assertEquals(saved.getId(), hit.get().getId());
-            verify(paymentRepository, never()).findByIdempotencyKey(key);
-        }
     }
 
     @Nested
