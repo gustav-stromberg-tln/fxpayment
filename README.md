@@ -1,4 +1,4 @@
-# FX Payment Processor
+# FX Payment Processor (coding exercise project)
 
 Foreign exchange payment processing service with multi-currency support, automatic fee calculation, IBAN validation, and idempotent payment creation.
 
